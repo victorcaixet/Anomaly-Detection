@@ -1,0 +1,7 @@
+anomalib==2.6.0
+ultralytics-opencv-headless==8.4.123
+numpy
+pandas
+matplotlib
+scikit-learn
+Pillow

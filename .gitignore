@@ -1,0 +1,14 @@
+__pycache__/
+.ruff_cache/
+.pytest_cache/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+.runtime_code/
+insulator_anomaly.zip
+anomalib_glass/
+anomalib_glass.zip
+images/
+mask/
+Good Isolators/
+Bad Isolators/
