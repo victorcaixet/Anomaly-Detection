@@ -212,8 +212,8 @@ class HeatmapTests(unittest.TestCase):
                 def __init__(self, **kwargs):
                     pass
 
-                def predict(self, model, data_path, return_predictions):
-                    return [predictions[str(data_path)]]
+                def predict(self, model, dataloaders, return_predictions):
+                    return [predictions[str(p)] for p in dataloaders.image_filenames]
 
             fake_torch = types.SimpleNamespace(
                 cuda=types.SimpleNamespace(is_available=lambda: False)
@@ -224,6 +224,14 @@ class HeatmapTests(unittest.TestCase):
                 "torch": fake_torch,
                 "anomalib.models": fake_models,
                 "anomalib.engine": fake_engine,
+                "anomalib.data": types.SimpleNamespace(
+                    PredictDataset=lambda **kwargs: types.SimpleNamespace(
+                        collate_fn=None
+                    )
+                ),
+                "torch.utils.data": types.SimpleNamespace(
+                    DataLoader=lambda dataset, **kwargs: dataset
+                ),
             }
 
             def save_figure(*args, **kwargs):

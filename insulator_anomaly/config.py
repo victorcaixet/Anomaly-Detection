@@ -10,6 +10,10 @@ class ProjectConfig:
     persistent_root: Path | None = None
     yolo_confidence: float = 0.25
     yolo_class_ids: tuple | None = None
+    segmenter: str = "yolo"  # "yolo" ou "sam"
+    sam_model: str = "sam2.1_b.pt"
+    sam_point: tuple = (0.5, 0.5)  # prompt, fração (x, y) da imagem
+    sam_boxes: dict | None = None  # {caminho relativo: [x0, y0, x1, y1]} em px; tem precedência
     output_size: int = 256
     roi_padding_ratio: float = 0.2
     align_horizontal: bool = True

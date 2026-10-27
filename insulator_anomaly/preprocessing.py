@@ -25,7 +25,8 @@ def odd_at_least(value: int, minimum: int = 3) -> int:
 
 
 def read_image(path: Path) -> np.ndarray:
-    image = cv2.imread(str(path), cv2.IMREAD_COLOR)
+    # imdecode: cv2.imread falha com caracteres não ASCII (ex.: "espaçador") no Windows
+    image = cv2.imdecode(np.fromfile(path, np.uint8), cv2.IMREAD_COLOR)
     if image is None:
         raise ValueError(f"Nao foi possivel ler a imagem: {path}")
     return image
@@ -58,15 +59,38 @@ def predict_object_mask(
     return union_mask.astype(bool)
 
 
+def predict_object_mask_sam(
+    config, image_path: Path, sam_model: Any, image: np.ndarray
+) -> np.ndarray:
+    """Mascara do objeto pelo SAM: caixa manual se houver sam_boxes, senao ponto."""
+    height, width = image.shape[:2]
+    if config.sam_boxes is not None:
+        relative = image_path.relative_to(config.dataset_root).as_posix()
+        if relative not in config.sam_boxes:
+            raise RuntimeError(f"Sem caixa em sam_boxes: {relative}")
+        prompt = {"bboxes": list(config.sam_boxes[relative])}
+    else:
+        point = [config.sam_point[0] * width, config.sam_point[1] * height]
+        prompt = {"points": [point], "labels": [1]}
+    result = sam_model.predict(
+        source=image, verbose=False, device=config.yolo_device, **prompt
+    )[0]
+    if result.masks is None or len(result.masks.data) == 0:
+        raise RuntimeError(f"SAM nao gerou mascara em {image_path}")
+    mask = result.masks.data.detach().cpu().numpy()[0] > 0.5
+    return cv2.resize(
+        mask.astype(np.uint8), (width, height), interpolation=cv2.INTER_NEAREST
+    ).astype(bool)
+
+
 def clean_mask(config, mask: np.ndarray) -> np.ndarray:
     """Remove ruido pequeno e aplica fechamento leve, preservando anomalias."""
     binary = mask.astype(np.uint8)
     min_area = max(8, int(mask.size * config.min_component_area_ratio))
-    count, labels, stats, _ = cv2.connectedComponentsWithStats(binary, connectivity=8)
-    cleaned = np.zeros_like(binary)
-    for component_id in range(1, count):
-        if stats[component_id, cv2.CC_STAT_AREA] >= min_area:
-            cleaned[labels == component_id] = 1
+    _, labels, stats, _ = cv2.connectedComponentsWithStats(binary, connectivity=8)
+    keep = stats[:, cv2.CC_STAT_AREA] >= min_area
+    keep[0] = False
+    cleaned = keep[labels].astype(np.uint8)
     kernel_size = odd_at_least(config.morph_kernel_size)
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
     cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_CLOSE, kernel, iterations=1)
@@ -240,24 +264,30 @@ def preprocess_all(config) -> dict[str, Any]:
     summary: dict[str, Any] = {"groups": {}, "errors": []}
     records = build_dataset_records(config.dataset_root)
     group_counts: dict[str, dict[str, int]] = {}
-    if not config.yolo_model_path.exists():
+    if config.segmenter not in ("yolo", "sam"):
+        raise ValueError(f"Segmentador desconhecido: {config.segmenter}")
+    use_sam = config.segmenter == "sam"
+    if not use_sam and not config.yolo_model_path.exists():
         raise FileNotFoundError(
             f"Modelo YOLO-seg nao encontrado: {config.yolo_model_path}"
         )
     try:
-        from ultralytics import YOLO
+        import ultralytics
     except ImportError as error:
         raise ImportError("Instale o Ultralytics: pip install ultralytics") from error
-    yolo_model = YOLO(str(config.yolo_model_path))
+    yolo_model = (
+        ultralytics.SAM(config.sam_model)
+        if use_sam
+        else ultralytics.YOLO(str(config.yolo_model_path))
+    )
+    predict_mask = predict_object_mask_sam if use_sam else predict_object_mask
     debug_counts: dict[str, int] = {}
     for record in records:
         counts = group_counts.setdefault(record.name, {"found": 0, "processed": 0})
         counts["found"] += 1
         try:
             image = read_image(record.image_path)
-            object_mask = predict_object_mask(
-                config, record.image_path, yolo_model, image
-            )
+            object_mask = predict_mask(config, record.image_path, yolo_model, image)
             mode_outputs, debug_outputs = preprocess_image_and_mask(
                 config, image, object_mask
             )
@@ -265,7 +295,7 @@ def preprocess_all(config) -> dict[str, Any]:
             row: dict[str, str] = {
                 "group": record.name,
                 "source_image": str(record.image_path),
-                "source_object_mask": "YOLO-seg (gerada em memoria)",
+                "source_object_mask": f"{config.segmenter} (gerada em memoria)",
             }
             for mode, output_image in mode_outputs.items():
                 destination = (
@@ -340,7 +370,7 @@ def source_dataset_signature(config) -> str:
                 stat.st_mtime_ns,
             )
         )
-    if config.yolo_model_path.is_file():
+    if config.segmenter == "yolo" and config.yolo_model_path.is_file():
         stat = config.yolo_model_path.stat()
         rows.append(
             ("yolo", config.yolo_model_path.name, stat.st_size, stat.st_mtime_ns)
@@ -352,7 +382,14 @@ def source_dataset_signature(config) -> str:
 
 def expected_preprocessing_state(config) -> dict[str, Any]:
     """Configuracao que precisa coincidir para um cache ser reutilizado."""
+    sam = (
+        {"segmenter": "sam", "sam_model": config.sam_model, "sam_point": list(config.sam_point),
+         "sam_boxes": config.sam_boxes}
+        if config.segmenter == "sam"
+        else {}
+    )
     return {
+        **sam,
         "pipeline_version": "patchcore-dataset-folder-v3-axis-sign",
         "source_signature": source_dataset_signature(config),
         "output_size": config.output_size,

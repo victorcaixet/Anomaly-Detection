@@ -25,26 +25,43 @@ def resolve_evaluation_checkpoint(config, mode):
     )
 
 
-def predict_checked_heatmap(engine, model, row):
-    """Confere a predição anterior e a geometria antes de usar o mapa."""
-    path = Path(row.image_path)
-    batches = engine.predict(model=model, data_path=path, return_predictions=True)
-    if not batches or len(batches) != 1:
-        raise ValueError(f"Esperava uma predição para {path}.")
-    batch = batches[0]
-    score = float(batch.pred_score.detach().cpu().reshape(-1)[0])
-    label = int(batch.pred_label.detach().cpu().reshape(-1)[0])
-    if not np.isclose(score, row.pred_score, rtol=1e-3, atol=1e-4) or label != int(
-        row.pred_label
-    ):
-        raise ValueError(f"Predição mudou em {path}; execute novamente a avaliação.")
-    array = batch.anomaly_map.detach().cpu().float().numpy().squeeze()
-    if array.ndim != 2 or min(array.shape) < 2 or not np.isfinite(array).all():
-        raise ValueError(f"Mapa inválido: {path}")
-    with Image.open(path) as image:
-        if image.size != (array.shape[1], array.shape[0]):
-            raise ValueError(f"Mapa e entrada com geometrias diferentes: {path}.")
-    return array
+def predict_checked_heatmaps(engine, model, rows):
+    """Uma inferência para todas as linhas; confere cada predição e geometria."""
+    from anomalib.data import PredictDataset
+    from torch.utils.data import DataLoader
+
+    rows = list(rows)
+    paths = [Path(row.image_path) for row in rows]
+    dataset = PredictDataset(path=paths[0])
+    dataset.image_filenames = paths
+    loader = DataLoader(
+        dataset,
+        batch_size=1,
+        shuffle=False,
+        num_workers=0,
+        collate_fn=dataset.collate_fn,
+    )
+    batches = engine.predict(model=model, dataloaders=loader, return_predictions=True)
+    if not batches or len(batches) != len(rows):
+        raise ValueError(f"Esperava {len(rows)} predições, recebi {len(batches or [])}.")
+    arrays = []
+    for path, row, batch in zip(paths, rows, batches, strict=True):
+        score = float(batch.pred_score.detach().cpu().reshape(-1)[0])
+        label = int(batch.pred_label.detach().cpu().reshape(-1)[0])
+        if not np.isclose(score, row.pred_score, rtol=1e-3, atol=1e-4) or label != int(
+            row.pred_label
+        ):
+            raise ValueError(
+                f"Predição mudou em {path}; execute novamente a avaliação."
+            )
+        array = batch.anomaly_map.detach().cpu().float().numpy().squeeze()
+        if array.ndim != 2 or min(array.shape) < 2 or not np.isfinite(array).all():
+            raise ValueError(f"Mapa inválido: {path}")
+        with Image.open(path) as image:
+            if image.size != (array.shape[1], array.shape[0]):
+                raise ValueError(f"Mapa e entrada com geometrias diferentes: {path}.")
+        arrays.append(array)
+    return arrays
 
 
 def evaluate_saved_patchcore(config, mode, target_recall=0.99, show=True):

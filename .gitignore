@@ -12,3 +12,6 @@ images/
 mask/
 Good Isolators/
 Bad Isolators/
+sam2.1_b.pt
+*.pt
+glass-preprocessed*.zip

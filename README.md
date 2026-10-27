@@ -2,6 +2,27 @@
 
 Pipeline de segmentação YOLO, preparação de imagens, PatchCore e análise dos erros. O notebook é o roteiro interativo; as implementações ficam nos módulos Python.
 
+## Resultado: haste de para-raios (`lightning-rod-suspension`)
+
+Original → caixa manual (50 marcadas, o resto pela mediana relativa) → máscara SAM → fundo cinza → PatchCore → mapa de anomalia. Teste: 117 normais e 50 com ferrugem, limiar calibrado em 5% de falso alarme numa validação só de normais.
+
+![pipeline](docs/img/pipeline.png)
+
+![scores](docs/img/scores.png)
+
+| Score | AUROC (IC 95%) | Recall | Falsos alarmes |
+|---|---|---|---|
+| PatchCore | 0,84 (0,79 a 0,90) | 12/50 | 6/117 |
+| Heatmap `absolute` / `mebin` | 0,85 | 16/50 | 9/117 |
+| Heatmap `contrast` | 0,39 | 0/50 | 2/117 |
+
+![camada de heatmaps](docs/img/camada_heatmaps.png)
+
+- A camada de heatmaps não compensou: Δ AUROC +0,007 (IC −0,007 a +0,022). O score por imagem do PatchCore já é o máximo do mapa; o ganho possível é de localização, que exige máscara do defeito.
+- Máscaras do SAM falham em parte das imagens (linhas TP e FP acima): o "acerto" pode ser artefato da segmentação. Controle sem SAM ainda não feito.
+- Só 50 defeitos: o recall tem intervalo largo. Figuras: `python scripts/make_showcase.py EXPERIMENTO PROJETO`.
+
+
 ## Organização aplicada
 
 ```text

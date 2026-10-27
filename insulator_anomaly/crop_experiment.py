@@ -266,7 +266,7 @@ def compare_source_scores(source_scores, normal_fpr=0.05):
     return pd.DataFrame(rows), pd.concat(decisions, ignore_index=True)
 
 
-def run_crop_experiment(experiment_root, save_heatmaps=True, accelerator="auto"):
+def run_crop_experiment(experiment_root, save_heatmaps=True, accelerator="auto", modes=('whole','segments')):
     """Treina dois modelos normais e compara por origem, sem calibrar no teste.
 
     Requer o ambiente Anomalib do notebook. Mantém os logs existentes.
@@ -284,7 +284,7 @@ def run_crop_experiment(experiment_root, save_heatmaps=True, accelerator="auto")
     protocol = json.loads((root/'protocol.json').read_text(encoding='utf-8'))
     settings = CropSettings(**protocol['settings'])
     manifest = pd.read_csv(root/'manifest.csv')
-    config = ProjectConfig(root, background_modes=('whole','segments'), output_size=settings.output_size,
+    config = ProjectConfig(root, background_modes=tuple(modes), output_size=settings.output_size,
                            random_seed=settings.seed, accelerator=accelerator)
     fingerprint = hashlib.sha256((root/'manifest.csv').read_bytes() + (root/'protocol.json').read_bytes())
     for path in manifest.image_path:

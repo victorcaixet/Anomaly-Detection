@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 
-from .evaluation import predict_checked_heatmap
+from .evaluation import predict_checked_heatmaps
 
 
 def validate_heatmap(array):
@@ -67,7 +67,8 @@ def read_aligned_mask(root, mode, image_path, dataset_root, shape):
 
 
 def heatmap_features(
-    array, threshold, roi=None, sigma=1.0, border_fraction=0.05, defect=None
+    array, threshold, roi=None, sigma=1.0, border_fraction=0.05, defect=None,
+    gradient=None,
 ):
     """Intensidade, extensão, componentes, borda e gradiente; sem min-max por imagem."""
     array = validate_heatmap(array)
@@ -80,7 +81,8 @@ def heatmap_features(
         )
     values = array[roi]
     top_k = max(1, math.ceil(values.size * 0.01))
-    gradient = heatmap_gradient(array, sigma)
+    if gradient is None:
+        gradient = heatmap_gradient(array, sigma)
     # Exclui da estatística do gradiente a faixa junto ao limite da ROI.
     radius = math.ceil(3 * sigma) + 1
     interior = cv2.erode(
@@ -321,7 +323,7 @@ def run_heatmap_analysis(
         )
         output = Path(results_root) / mode / "heatmap_analysis"
         output.mkdir(parents=True, exist_ok=True)
-        records = []
+        records, maps = [], {}
         model = Patchcore.load_from_checkpoint(
             metrics["checkpoint_path"], map_location="cpu", weights_only=False
         )
@@ -335,13 +337,16 @@ def run_heatmap_analysis(
                 enable_model_summary=False,
                 default_root_dir=output,
             )
-            for number, row in enumerate(selection.itertuples(index=False), 1):
+            selected = list(selection.itertuples(index=False))
+            arrays = predict_checked_heatmaps(engine, model, selected)
+            for number, (row, array) in enumerate(zip(selected, arrays), 1):
                 path = Path(row.image_path)
-                array = validate_heatmap(predict_checked_heatmap(engine, model, row))
+                array = validate_heatmap(array)
                 key = hashlib.sha256(str(path.resolve()).encode()).hexdigest()[:16]
                 map_path = output / f"{key}_map.npy"
                 np.save(map_path, array.astype(np.float32))
                 records.append(dict(row._asdict(), map_path=str(map_path), key=key))
+                maps[str(map_path)] = array.astype(np.float32)
                 if number % 20 == 0 or number == len(selection):
                     print(f"{mode}: {number}/{len(selection)} mapas calculados.")
         finally:
@@ -353,7 +358,7 @@ def run_heatmap_analysis(
         reference_parts = []
         shape = None
         for record in records:
-            array = np.load(record["map_path"])
+            array = maps[record["map_path"]]
             if shape is not None and array.shape != shape:
                 raise ValueError(
                     "Use mapas com a mesma resolução para comparar gradientes e áreas."
@@ -369,17 +374,16 @@ def run_heatmap_analysis(
                 reference_parts.append(values)
         reference_pixels = np.concatenate(reference_parts)
         thresholds = {q: float(np.quantile(reference_pixels, q)) for q in quantiles}
-        minimum = min(float(np.load(record["map_path"]).min()) for record in records)
-        maximum = max(float(np.load(record["map_path"]).max()) for record in records)
+        minimum = min(float(array.min()) for array in maps.values())
+        maximum = max(float(array.max()) for array in maps.values())
         limits = (minimum, maximum if maximum > minimum else minimum + 1e-6)
-        gradient_limit = max(
-            float(heatmap_gradient(np.load(record["map_path"]), gradient_sigma).max())
-            for record in records
-        )
-        gradient_limit = max(gradient_limit, 1e-12)
+        gradients = {
+            path: heatmap_gradient(array, gradient_sigma) for path, array in maps.items()
+        }
+        gradient_limit = max(max(g.max() for g in gradients.values()), 1e-12)
         rows, sweeps = [], []
         for record in records:
-            array = np.load(record["map_path"])
+            array = maps[record["map_path"]]
             roi = read_aligned_mask(
                 roi_root, mode, record["image_path"], dataset_root, array.shape
             )
@@ -387,7 +391,8 @@ def run_heatmap_analysis(
                 defect_root, mode, record["image_path"], dataset_root, array.shape
             )
             features, hot, gradient = heatmap_features(
-                array, thresholds[primary_quantile], roi, gradient_sigma, defect=defect
+                array, thresholds[primary_quantile], roi, gradient_sigma, defect=defect,
+                gradient=gradients[record["map_path"]],
             )
             row = dict(
                 record,

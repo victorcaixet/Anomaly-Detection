@@ -1,6 +1,7 @@
 """Localiza o projeto no Windows ou no sistema de arquivos do Colab."""
 
 from pathlib import Path
+import shutil
 import zipfile
 
 
@@ -32,6 +33,22 @@ def extract_project(archive, destination):
             f"Projeto não encontrado em {destination}; confira a estrutura do ZIP."
         )
     return project
+
+
+def _copy_to_local(project):
+    """Imagens e best.pt do Drive para /content (leitura rápida); checkpoints ficam no Drive."""
+    local = Path("/content/anomalib_project") / project.name
+    local.mkdir(parents=True, exist_ok=True)
+    for name in ("glass-insulator", "glass-preprocessed", "best.pt"):
+        source, target = project / name, local / name
+        if target.exists() or not source.exists():
+            continue
+        print(f"Copiando {source} para {target}. Aguarde...")
+        if source.is_dir():
+            shutil.copytree(source, target)
+        else:
+            shutil.copy2(source, target)
+    return local
 
 
 def resolve_project(project_path="", zip_path="", colab=False):
@@ -76,7 +93,9 @@ def resolve_project(project_path="", zip_path="", colab=False):
             "caminhos C:/... exigem um kernel Windows local."
         )
     persistent = project
-    if colab and not project.is_relative_to(Path("/content/drive")):
+    if colab and project.is_relative_to(Path("/content/drive")):
+        project = _copy_to_local(project)
+    elif colab:
         persistent = (
             archive.parent / "anomalib_glass"
             if archive is not None

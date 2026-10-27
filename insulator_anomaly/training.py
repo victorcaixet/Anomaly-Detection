@@ -121,6 +121,7 @@ def train_one_patchcore(config, mode, force=False, post_processor=True, preproce
             logger=False,
             enable_progress_bar=False,
             enable_model_summary=False,
+            **({"limit_val_batches": 0} if config.val_split_mode == "none" else {}),
         )
         engine.fit(model=model, datamodule=datamodule)
         checkpoint_root.mkdir(parents=True, exist_ok=True)

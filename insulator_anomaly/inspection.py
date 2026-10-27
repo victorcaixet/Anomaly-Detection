@@ -24,7 +24,7 @@ def analyze_false_negatives(
     import torch
     from anomalib.engine import Engine
     from anomalib.models import Patchcore
-    from .evaluation import predict_checked_heatmap
+    from .evaluation import predict_checked_heatmaps
 
     # Vinculo exato pelo nome gerado no pipeline; nomes ambiguos nao sao adivinhados.
     source_index = {}
@@ -81,19 +81,22 @@ def analyze_false_negatives(
             enable_model_summary=False,
             default_root_dir=output,
         )
-        records = []
+        records, maps = [], {}
         try:
-            for _, row in selected.iterrows():
+            rows = [row for _, row in selected.iterrows()]
+            for row, anomaly_map in zip(
+                rows, predict_checked_heatmaps(engine, model, rows)
+            ):
                 image_path = Path(row.image_path)
-                anomaly_map = predict_checked_heatmap(engine, model, row)
                 key = hashlib.sha256(str(image_path).encode()).hexdigest()[:12]
                 map_path = output / f"{key}_anomaly_map.npy"
                 np.save(map_path, anomaly_map)
                 records.append((row, key, map_path))
+                maps[map_path] = anomaly_map
 
             # Escala compartilhada entre todos os FN deste modo, sem min-max por imagem.
-            map_min = min(float(np.load(path).min()) for _, _, path in records)
-            map_max = max(float(np.load(path).max()) for _, _, path in records)
+            map_min = min(float(m.min()) for m in maps.values())
+            map_max = max(float(m.max()) for m in maps.values())
             if map_max <= map_min:
                 map_max = map_min + 1e-6
             normal = frame.loc[frame.y_true == 0, "pred_score"].to_numpy()
@@ -110,7 +113,7 @@ def analyze_false_negatives(
                 original_path = next(iter(candidates)) if len(candidates) == 1 else None
                 with Image.open(image_path) as image:
                     processed = np.asarray(image.convert("RGB"))
-                anomaly_map = np.load(map_path)
+                anomaly_map = maps[map_path]
                 fig, axes = plt.subplots(1, 4, figsize=(22, 5))
                 if original_path is not None:
                     with Image.open(original_path) as image:

@@ -172,6 +172,72 @@ class PipelineTests(unittest.TestCase):
                 safe_output_name(Path("test/good/a.jpg"), Path(".")),
             )
 
+    def test_sam_segmenter_uses_point_prompt_without_yolo_file(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            config = ProjectConfig(
+                Path(temporary), segmenter="sam", background_modes=("gray",)
+            )
+            make_images(config.dataset_root)
+            calls = []
+
+            class SAM:
+                def __init__(self, name):
+                    calls.append(name)
+
+                def predict(self, source, points=None, labels=None, bboxes=None, **kwargs):
+                    calls.append(points or bboxes)
+                    mask = np.zeros((1, 64, 64), np.float32)
+                    mask[0, 20:45, 10:55] = 1
+                    return [
+                        types.SimpleNamespace(
+                            masks=types.SimpleNamespace(data=Tensor(mask))
+                        )
+                    ]
+
+            with (
+                patch.dict(sys.modules, {"ultralytics": types.SimpleNamespace(SAM=SAM)}),
+                contextlib.redirect_stdout(io.StringIO()),
+            ):
+                summary = prepare_processed_datasets(config, generate=True)
+            self.assertFalse(summary["errors"])
+            self.assertEqual(calls[0], "sam2.1_b.pt")
+            self.assertEqual(calls[1], [[32.0, 32.0]])
+            self.assertEqual(
+                len(list((config.processed_root / "gray/test/anomaly").glob("*.png"))), 1
+            )
+
+    def test_sam_manual_boxes_take_precedence_and_missing_box_is_reported(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            boxes = {"train/good/sample.png": [5, 10, 60, 50], "test/good/sample.png": [5, 10, 60, 50]}
+            config = ProjectConfig(
+                Path(temporary), segmenter="sam", background_modes=("gray",), sam_boxes=boxes
+            )
+            make_images(config.dataset_root)
+            calls = []
+
+            class SAM:
+                def __init__(self, name):
+                    pass
+
+                def predict(self, source, points=None, labels=None, bboxes=None, **kwargs):
+                    calls.append((points, bboxes))
+                    mask = np.zeros((1, 64, 64), np.float32)
+                    mask[0, 20:45, 10:55] = 1
+                    return [
+                        types.SimpleNamespace(
+                            masks=types.SimpleNamespace(data=Tensor(mask))
+                        )
+                    ]
+
+            with (
+                patch.dict(sys.modules, {"ultralytics": types.SimpleNamespace(SAM=SAM)}),
+                contextlib.redirect_stdout(io.StringIO()),
+            ):
+                summary = prepare_processed_datasets(config, generate=True)
+            self.assertEqual(calls, [(None, [5, 10, 60, 50])] * 2)
+            self.assertEqual(len(summary["errors"]), 1)
+            self.assertIn("test/anomaly/sample.png", summary["errors"][0]["error"])
+
     def test_training_passes_split_settings_reuses_and_preserves_checkpoints(self):
         with tempfile.TemporaryDirectory() as temporary:
             config = ProjectConfig(Path(temporary), background_modes=("gray",))
@@ -281,12 +347,11 @@ class PipelineTests(unittest.TestCase):
                     pass
 
                 def predict(self, **kwargs):
-                    if "data_path" in kwargs:
-                        return [
-                            batch
-                            for batch in batches
-                            if batch.image_path == [str(kwargs["data_path"])]
-                        ]
+                    loader = kwargs.get("dataloaders")
+                    wanted = getattr(loader, "image_filenames", None)
+                    if wanted is not None:
+                        by_path = {b.image_path[0]: b for b in batches}
+                        return [by_path[str(p)] for p in wanted]
                     return list(batches)
 
             fake_modules = {
@@ -302,7 +367,7 @@ class PipelineTests(unittest.TestCase):
                     cuda=types.SimpleNamespace(is_available=lambda: False),
                 ),
                 "torch.utils.data": types.SimpleNamespace(
-                    DataLoader=lambda *args, **kwargs: None
+                    DataLoader=lambda dataset=None, **kwargs: dataset
                 ),
             }
             with (
