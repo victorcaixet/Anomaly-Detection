@@ -116,7 +116,7 @@ def train_one_patchcore(config, mode, force=False, post_processor=True, preproce
         run_root.mkdir(parents=True, exist_ok=True)
         engine = Engine(
             default_root_dir=run_root,
-            accelerator="auto",
+            accelerator=config.accelerator,
             devices=1,
             logger=False,
             enable_progress_bar=False,

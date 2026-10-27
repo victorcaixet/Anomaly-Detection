@@ -328,7 +328,7 @@ def run_heatmap_analysis(
         engine = None
         try:
             engine = Engine(
-                accelerator="auto",
+                accelerator=config.accelerator,
                 devices=1,
                 logger=False,
                 enable_progress_bar=False,

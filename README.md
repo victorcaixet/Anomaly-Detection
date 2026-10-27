@@ -32,11 +32,34 @@ Não há uma camada genérica de serviços, uma CLI nova ou um diretório `utils
 
 ## Executar localmente
 
-Use Python 3.10 ou superior, com uma versão compatível com as bibliotecas fixadas; a revisão foi testada com Python 3.12. Instale as dependências no seu ambiente do projeto:
+Use Python 3.12 e uma GPU NVIDIA com driver compatível. Crie um ambiente local:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+```
+
+Antes de instalar as dependências, instale **torch e torchvision com CUDA** usando
+ o comando do [seletor oficial do PyTorch](https://pytorch.org/get-started/locally/)
+para Windows / Pip / Python e a versão CUDA compatível com sua placa e driver.
+A instalação CPU-only não usa a GPU; instalar apenas o CUDA Toolkit não a converte.
 
 ```powershell
 python -m pip install -r requirements.txt
+python -m pip install ipykernel
+python -m ipykernel install --user --name anomaly-gpu --display-name "Anomaly Detection (GPU)"
+python -c "import torch; print(torch.__version__, torch.version.cuda); assert torch.cuda.is_available(), 'CUDA indisponível'; x=torch.ones(1, device='cuda')*2; print(torch.cuda.get_device_name(0), x.item())"
 ```
+
+Selecione **Anomaly Detection (GPU)** como kernel. Os três notebooks usam
+`ACCELERATOR="gpu"`, verificam CUDA com uma operação real e mostram a placa.
+Se CUDA não estiver disponível, interrompem com uma mensagem em vez de usar CPU
+silenciosamente. Para execução deliberada em CPU, altere para `"cpu"`.
+O carregamento usa `num_workers=0`, adequado aos notebooks no Windows, e
+uma GPU por execução. YOLO também recebe o dispositivo escolhido.
+Se faltar VRAM, reduza `coreset_sampling_ratio` em um novo experimento;
+PatchCore mantém um banco de características que cresce com o dataset.
 
 Abra o notebook junto à pasta `insulator_anomaly`. Para avaliar os modelos salvos, execute as seções 1–3 e 6. As seções 7–9 inspecionam os resultados. O treino está desativado por padrão.
 
@@ -46,7 +69,7 @@ Também é possível chamar as etapas diretamente:
 from insulator_anomaly.config import ProjectConfig
 from insulator_anomaly.evaluation import evaluate_all
 
-config = ProjectConfig("anomalib_glass")
+config = ProjectConfig("anomalib_glass", accelerator="gpu")
 evaluations, comparison = evaluate_all(config)
 ```
 

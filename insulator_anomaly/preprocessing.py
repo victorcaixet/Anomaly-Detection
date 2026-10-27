@@ -36,7 +36,7 @@ def predict_object_mask(
 ) -> np.ndarray:
     """Gera mascara do objeto para uma imagem sem mascara salva."""
     result = yolo_model.predict(
-        source=image, conf=config.yolo_confidence, verbose=False
+        source=image, conf=config.yolo_confidence, verbose=False, device=config.yolo_device
     )[0]
     if result.masks is None or len(result.masks.data) == 0:
         raise RuntimeError(f"YOLO-seg nao encontrou objeto em {image_path}")

@@ -60,6 +60,25 @@ def make_images(root):
 
 
 class PipelineTests(unittest.TestCase):
+    def test_local_gpu_configuration_and_notebook_guard(self):
+        config = ProjectConfig(".", accelerator="gpu")
+        self.assertEqual(config.yolo_device, 0)
+        self.assertEqual(config.num_workers, 0)
+        self.assertEqual(ProjectConfig(".", accelerator="cpu").yolo_device, "cpu")
+        self.assertIsNone(ProjectConfig(".").yolo_device)
+        for name in ("PatchCore_Anomalib", "Crop_Comparison", "Heatmap_Comparison"):
+            notebook = json.loads(Path(name + ".ipynb").read_text(encoding="utf-8"))
+            for cell in notebook["cells"]:
+                if cell["cell_type"] == "code":
+                    compile("".join(cell["source"]), name, "exec")
+            setup = next("".join(c["source"]) for c in notebook["cells"]
+                         if 'ACCELERATOR = "gpu"' in "".join(c["source"]))
+            setup = setup[setup.index("import torch"):]
+            fake_torch = types.SimpleNamespace(cuda=types.SimpleNamespace(is_available=lambda: False))
+            with patch.dict(sys.modules, {"torch": fake_torch}):
+                with self.assertRaisesRegex(RuntimeError, "CUDA indisponivel"):
+                    exec(setup, {})
+
     def test_paths_support_processed_only_and_reject_archive_traversal(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

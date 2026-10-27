@@ -22,7 +22,8 @@ class ProjectConfig:
     letterbox_color_bgr: tuple = (114, 114, 114)
     train_batch_size: int = 1
     eval_batch_size: int = 1
-    num_workers: int = 2
+    num_workers: int = 0
+    accelerator: str = "auto"
     coreset_sampling_ratio: float = 0.03
     num_neighbors: int = 5
     patchcore_backbone: str = "wide_resnet50_2"
@@ -39,6 +40,10 @@ class ProjectConfig:
         self.persistent_root = (
             Path(self.persistent_root or self.project_root).expanduser().resolve()
         )
+
+    @property
+    def yolo_device(self):
+        return {"gpu": 0, "cpu": "cpu"}.get(self.accelerator)
 
     @property
     def dataset_root(self):

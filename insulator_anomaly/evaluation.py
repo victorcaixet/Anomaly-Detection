@@ -87,7 +87,7 @@ def evaluate_saved_patchcore(config, mode, target_recall=0.99, show=True):
         str(checkpoint), map_location="cpu", weights_only=False
     )
     engine = Engine(
-        accelerator="auto",
+        accelerator=config.accelerator,
         devices=1,
         logger=False,
         enable_progress_bar=False,

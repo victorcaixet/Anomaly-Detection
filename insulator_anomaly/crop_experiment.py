@@ -65,7 +65,7 @@ def padded_box(box, width, height, margin):
             min(width, math.ceil(x1+dx)), min(height, math.ceil(y1+dy)))
 
 
-def locate_crop_boxes(source_root, model_path, confidence=0.25, class_ids=None):
+def locate_crop_boxes(source_root, model_path, confidence=0.25, class_ids=None, device=None):
     """Usa apenas as caixas YOLO, sem aplicar máscaras; fallback é quadro inteiro.
 
     União das instâncias selecionadas. Uma detecção parcial ainda pode excluir
@@ -80,7 +80,7 @@ def locate_crop_boxes(source_root, model_path, confidence=0.25, class_ids=None):
     for number, record in enumerate(records, 1):
         image = read_image(record.image_path)
         h, w = image.shape[:2]
-        result = model.predict(source=image, conf=confidence, verbose=False)[0]
+        result = model.predict(source=image, conf=confidence, verbose=False, device=device)[0]
         xyxy = np.empty((0,4))
         if result.boxes is not None:
             xyxy = result.boxes.xyxy.detach().cpu().numpy()
@@ -266,7 +266,7 @@ def compare_source_scores(source_scores, normal_fpr=0.05):
     return pd.DataFrame(rows), pd.concat(decisions, ignore_index=True)
 
 
-def run_crop_experiment(experiment_root, save_heatmaps=True):
+def run_crop_experiment(experiment_root, save_heatmaps=True, accelerator="auto"):
     """Treina dois modelos normais e compara por origem, sem calibrar no teste.
 
     Requer o ambiente Anomalib do notebook. Mantém os logs existentes.
@@ -285,7 +285,7 @@ def run_crop_experiment(experiment_root, save_heatmaps=True):
     settings = CropSettings(**protocol['settings'])
     manifest = pd.read_csv(root/'manifest.csv')
     config = ProjectConfig(root, background_modes=('whole','segments'), output_size=settings.output_size,
-                           random_seed=settings.seed)
+                           random_seed=settings.seed, accelerator=accelerator)
     fingerprint = hashlib.sha256((root/'manifest.csv').read_bytes() + (root/'protocol.json').read_bytes())
     for path in manifest.image_path:
         fingerprint.update(Path(path).read_bytes())
@@ -297,6 +297,7 @@ def run_crop_experiment(experiment_root, save_heatmaps=True):
         report = train_one_patchcore(config, mode, post_processor=False, preprocessing_id=preprocessing_id)
         model = Patchcore.load_from_checkpoint(report['checkpoint'], map_location='cpu', weights_only=False)
         engine = Engine(default_root_dir=root/'inference'/mode, logger=False,
+                        accelerator=config.accelerator, devices=1,
                         enable_progress_bar=False, enable_model_summary=False)
         wanted = manifest[(manifest['mode'] == mode) & manifest.split.isin(['val','test'])]
         rows = []
