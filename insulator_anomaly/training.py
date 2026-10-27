@@ -9,9 +9,9 @@ from .data import validate_processed_dataset
 from .preprocessing import preprocessing_signature
 
 
-def experiment_signature(config, mode):
+def experiment_signature(config, mode, preprocessing_id=None):
     state = {
-        "preprocessing_signature": preprocessing_signature(config),
+        "preprocessing_signature": preprocessing_id if preprocessing_id is not None else preprocessing_signature(config),
         "mode": mode,
         "output_size": config.output_size,
         "backbone": config.patchcore_backbone,
@@ -46,12 +46,14 @@ def find_checkpoint(config, mode, signature):
     )
 
 
-def train_one_patchcore(config, mode, force=False):
+def train_one_patchcore(config, mode, force=False, post_processor=True, preprocessing_id=None):
     """Reutiliza o treino compatível; preserva checkpoints de outros protocolos."""
     if mode not in config.background_modes:
         raise ValueError(f"Modo inválido: {mode}")
     validate_processed_dataset(config.processed_root / mode)
-    signature = experiment_signature(config, mode)
+    signature = experiment_signature(config, mode, preprocessing_id)
+    if not post_processor:
+        signature = hashlib.sha256((signature + ':raw_scores').encode()).hexdigest()
     checkpoint_root = config.checkpoints_root / mode
     checkpoint = None if force else find_checkpoint(config, mode, signature)
     report_path = config.persistent_results_root / mode / "experiment_report.json"
@@ -104,6 +106,7 @@ def train_one_patchcore(config, mode, force=False):
             num_neighbors=config.num_neighbors,
             precision=config.patchcore_precision,
             visualizer=False,
+            post_processor=post_processor,
             pre_processor=Patchcore.configure_pre_processor(
                 image_size=(config.output_size, config.output_size),
                 center_crop_size=None,
@@ -144,6 +147,7 @@ def train_one_patchcore(config, mode, force=False):
                 test_split_mode=config.test_split_mode,
                 val_split_mode=config.val_split_mode,
                 val_split_ratio=config.val_split_ratio,
+                post_processor=post_processor,
             ),
         )
         report_path.parent.mkdir(parents=True, exist_ok=True)
