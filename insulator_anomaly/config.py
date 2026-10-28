@@ -14,6 +14,7 @@ class ProjectConfig:
     sam_model: str = "sam2.1_b.pt"
     sam_point: tuple = (0.5, 0.5)  # prompt, fração (x, y) da imagem
     sam_boxes: dict | None = None  # {caminho relativo: [x0, y0, x1, y1]} em px; tem precedência
+    sam_points: dict | None = None  # {caminho relativo: [[x, y, 1|0], ...]} refinam a caixa
     output_size: int = 256
     roi_padding_ratio: float = 0.2
     align_horizontal: bool = True

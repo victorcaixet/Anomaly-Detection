@@ -20,6 +20,7 @@ from insulator_anomaly.config import ProjectConfig
 from insulator_anomaly.data import safe_output_name
 from insulator_anomaly.evaluation import evaluate_all
 from insulator_anomaly.inspection import analyze_false_negatives
+from insulator_anomaly import preprocessing
 from insulator_anomaly.paths import extract_project, resolve_project
 from insulator_anomaly.preprocessing import (
     prepare_processed_datasets,
@@ -237,6 +238,32 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(calls, [(None, [5, 10, 60, 50])] * 2)
             self.assertEqual(len(summary["errors"]), 1)
             self.assertIn("test/anomaly/sample.png", summary["errors"][0]["error"])
+
+    def test_sam_points_refine_box_and_suspect_mask_flags_failures(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            config = ProjectConfig(
+                Path(temporary), segmenter="sam", sam_boxes={"train/good/sample.png": [5, 10, 60, 50]},
+                sam_points={"train/good/sample.png": [[30, 30, 1], [8, 12, 0]]},
+            )
+            make_images(config.dataset_root)
+            calls = []
+
+            class SAM:
+                def predict(self, source, points=None, labels=None, bboxes=None, **kwargs):
+                    calls.append((points, labels, bboxes))
+                    mask = np.ones((1, 64, 64), np.float32)
+                    return [types.SimpleNamespace(masks=types.SimpleNamespace(data=Tensor(mask)))]
+
+            path = config.dataset_root / "train/good/sample.png"
+            mask = preprocessing.predict_object_mask_sam(config, path, SAM(), np.zeros((64, 64, 3), np.uint8))
+            self.assertEqual(calls, [([[[30, 30], [8, 12]]], [[1, 0]], [5, 10, 60, 50])])
+            self.assertEqual(mask.shape, (64, 64))
+        box = [10, 10, 50, 50]
+        good = np.zeros((64, 64), bool)
+        good[15:45, 15:45] = True
+        self.assertEqual(preprocessing.suspect_mask(good, box), [])
+        self.assertTrue(preprocessing.suspect_mask(np.ones((64, 64), bool), box))
+        self.assertEqual(preprocessing.suspect_mask(np.zeros((64, 64), bool), box), ["vazia"])
 
     def test_training_passes_split_settings_reuses_and_preserves_checkpoints(self):
         with tempfile.TemporaryDirectory() as temporary:

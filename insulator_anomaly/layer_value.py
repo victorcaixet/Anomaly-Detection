@@ -9,9 +9,7 @@ import pandas as pd
 from scipy.stats import rankdata
 from sklearn.metrics import roc_auc_score
 
-
-def _threshold(normal_scores, fpr):
-    return float(np.quantile(normal_scores, 1 - fpr, method="higher"))
+from .evaluation import val_threshold
 
 
 def _rates(y, alarm):
@@ -35,8 +33,8 @@ def layer_value(source_scores, map_scores, method="absolute", fpr=0.05, n_boot=2
         raise ValueError("Exige validação normal e teste com as duas classes.")
     y, raw, heat = test.y_true.to_numpy(), test.pred_score.to_numpy(), test.score.to_numpy()
     fused = rankdata(raw) + rankdata(heat)
-    alarm_raw = raw > _threshold(val.pred_score, fpr)
-    alarm_map = heat > _threshold(map_val, fpr)
+    alarm_raw = raw > val_threshold(val.pred_score, fpr)
+    alarm_map = heat > val_threshold(map_val, fpr)
     rng = np.random.default_rng(seed)
     deltas = []
     for _ in range(n_boot):

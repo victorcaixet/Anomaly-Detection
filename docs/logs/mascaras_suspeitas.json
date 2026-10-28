@@ -1,0 +1,276 @@
+{
+ "test/anomaly/rust/02-06-2021_DJI_0592_280.jpg": [
+  "fragmentada (0.79 no maior componente)"
+ ],
+ "test/anomaly/rust/08-06-2021_DJI_0270_377.jpg": [
+  "fragmentada (0.71 no maior componente)"
+ ],
+ "test/anomaly/rust/08-06-2021_DJI_0320_396.jpg": [
+  "vaza da caixa (0.11)",
+  "fragmentada (0.56 no maior componente)"
+ ],
+ "test/anomaly/rust/08-06-2021_DJI_0370_409.jpg": [
+  "fragmentada (0.79 no maior componente)"
+ ],
+ "test/anomaly/rust/08-06-2021_DJI_0420_430.jpg": [
+  "fragmentada (0.72 no maior componente)"
+ ],
+ "test/anomaly/rust/09-06-2021_DJI_0182_474.jpg": [
+  "fragmentada (0.46 no maior componente)"
+ ],
+ "test/anomaly/rust/09-06-2021_DJI_0427_552.jpg": [
+  "fragmentada (0.74 no maior componente)"
+ ],
+ "test/anomaly/rust/10-06-2021_DJI_0006_604.jpg": [
+  "fragmentada (0.74 no maior componente)"
+ ],
+ "test/anomaly/rust/10-06-2021_DJI_0052_621.jpg": [
+  "fragmentada (0.75 no maior componente)"
+ ],
+ "test/anomaly/rust/10-06-2021_DJI_0076_629.jpg": [
+  "fragmentada (0.56 no maior componente)"
+ ],
+ "test/anomaly/rust/10-06-2021_DJI_0374_679.jpg": [
+  "fragmentada (0.50 no maior componente)"
+ ],
+ "test/anomaly/rust/10-06-2021_DJI_0467_698.jpg": [
+  "fragmentada (0.77 no maior componente)"
+ ],
+ "test/anomaly/rust/15-06-2021_DJI_0004_714.jpg": [
+  "vaza da caixa (0.14)",
+  "fragmentada (0.56 no maior componente)"
+ ],
+ "test/anomaly/rust/15-06-2021_DJI_0149_742.jpg": [
+  "fragmentada (0.76 no maior componente)"
+ ],
+ "test/anomaly/rust/15-06-2021_DJI_0196_758.jpg": [
+  "fragmentada (0.73 no maior componente)"
+ ],
+ "test/anomaly/rust/15-06-2021_DJI_0243_777.jpg": [
+  "fragmentada (0.44 no maior componente)"
+ ],
+ "test/anomaly/rust/15-06-2021_DJI_0372_797.jpg": [
+  "fragmentada (0.75 no maior componente)"
+ ],
+ "test/good/Fotos 10-12-2020_DJI_0285_suspensao_para_raio_149.jpg": [
+  "vaza da caixa (0.11)",
+  "fragmentada (0.36 no maior componente)"
+ ],
+ "test/good/Fotos 16-11-2020_DJI_0134_suspensao_para_raio_231.jpg": [
+  "fragmentada (0.58 no maior componente)"
+ ],
+ "test/good/Fotos 16-11-2020_DJI_0203_suspensao_para_raio_217.jpg": [
+  "fragmentada (0.73 no maior componente)"
+ ],
+ "test/good/Fotos 17-11-2020_DJI_0238_suspensao_para_raio_273.jpg": [
+  "fragmentada (0.59 no maior componente)"
+ ],
+ "test/good/Fotos 17-11-2020_DJI_0239_suspensao_para_raio_274.jpg": [
+  "fragmentada (0.47 no maior componente)"
+ ],
+ "test/good/Fotos 18-11-2020_DJI_0078_suspensao_para_raio_374.jpg": [
+  "fragmentada (0.55 no maior componente)"
+ ],
+ "test/good/Fotos 18-11-2020_DJI_0086_suspensao_para_raio_381.jpg": [
+  "vaza da caixa (0.11)"
+ ],
+ "test/good/Fotos 18-11-2020_DJI_0201_suspensao_para_raio_338.jpg": [
+  "fragmentada (0.69 no maior componente)"
+ ],
+ "test/good/Fotos 18-11-2020_DJI_0226_suspensao_para_raio_328.jpg": [
+  "fragmentada (0.70 no maior componente)"
+ ],
+ "test/good/Fotos 19-11-2020_DJI_0049_suspensao_para_raio_429.jpg": [
+  "vaza da caixa (0.12)"
+ ],
+ "test/good/Fotos 19-11-2020_DJI_0143_suspensao_para_raio_400.jpg": [
+  "vaza da caixa (0.15)",
+  "fragmentada (0.77 no maior componente)"
+ ],
+ "test/good/Fotos 20-10-2020_DJI_0027_suspensao_para_raio_439.jpg": [
+  "vaza da caixa (0.12)",
+  "fragmentada (0.62 no maior componente)"
+ ],
+ "test/good/Fotos 20-10-2020_DJI_0220_suspensao_para_raio_472.jpg": [
+  "fragmentada (0.61 no maior componente)"
+ ],
+ "test/good/Fotos 20-11-2020_DJI_0064_suspensao_para_raio_533.jpg": [
+  "fragmentada (0.53 no maior componente)"
+ ],
+ "test/good/Fotos 20-11-2020_DJI_0074_suspensao_para_raio_525.jpg": [
+  "preenche a caixa (0.96)",
+  "vaza da caixa (0.20)",
+  "fragmentada (0.59 no maior componente)"
+ ],
+ "test/good/Fotos 20-11-2020_DJI_0126_suspensao_para_raio_522.jpg": [
+  "fragmentada (0.35 no maior componente)"
+ ],
+ "test/good/Fotos 20-11-2020_DJI_0231_suspensao_para_raio_501.jpg": [
+  "fragmentada (0.62 no maior componente)"
+ ],
+ "test/good/Fotos 21-10-2020_DJI_0398_suspensao_para_raio_547.jpg": [
+  "fragmentada (0.58 no maior componente)"
+ ],
+ "test/good/Fotos 24-11-2020_DJI_0290_suspensao_para_raio_624.jpg": [
+  "vaza da caixa (0.20)",
+  "fragmentada (0.40 no maior componente)"
+ ],
+ "test/good/Fotos 24-11-2020_DJI_0355_suspensao_para_raio_619.jpg": [
+  "vaza da caixa (0.19)"
+ ],
+ "test/good/Fotos 24-11-2020_DJI_0356_suspensao_para_raio_620.jpg": [
+  "vaza da caixa (0.15)"
+ ],
+ "test/good/Fotos 27-11-2020_DJI_0379_suspensao_para_raio_677.jpg": [
+  "vaza da caixa (0.17)",
+  "fragmentada (0.72 no maior componente)"
+ ],
+ "train/good/Fotos 03-12-2020_DJI_0041_suspensao_para_raio_72.jpg": [
+  "SAM nao gerou mascara"
+ ],
+ "train/good/Fotos 16-11-2020_DJI_0151_suspensao_para_raio_229.jpg": [
+  "fragmentada (0.60 no maior componente)"
+ ],
+ "train/good/Fotos 16-11-2020_DJI_0202_suspensao_para_raio_216.jpg": [
+  "fragmentada (0.66 no maior componente)"
+ ],
+ "train/good/Fotos 16-11-2020_DJI_0222_suspensao_para_raio_207.jpg": [
+  "vaza da caixa (0.11)"
+ ],
+ "train/good/Fotos 16-11-2020_DJI_0224_suspensao_para_raio_209.jpg": [
+  "fragmentada (0.79 no maior componente)"
+ ],
+ "train/good/Fotos 16-11-2020_DJI_0226_suspensao_para_raio_211.jpg": [
+  "preenche a caixa (0.96)"
+ ],
+ "train/good/Fotos 17-11-2020_DJI_0021_suspensao_para_raio_300.jpg": [
+  "vaza da caixa (0.11)"
+ ],
+ "train/good/Fotos 18-11-2020_DJI_0077_suspensao_para_raio_373.jpg": [
+  "fragmentada (0.49 no maior componente)"
+ ],
+ "train/good/Fotos 18-11-2020_DJI_0112_suspensao_para_raio_366.jpg": [
+  "fragmentada (0.54 no maior componente)"
+ ],
+ "train/good/Fotos 18-11-2020_DJI_0113_suspensao_para_raio_367.jpg": [
+  "fragmentada (0.78 no maior componente)"
+ ],
+ "train/good/Fotos 18-11-2020_DJI_0115_suspensao_para_raio_369.jpg": [
+  "fragmentada (0.50 no maior componente)"
+ ],
+ "train/good/Fotos 18-11-2020_DJI_0116_suspensao_para_raio_370.jpg": [
+  "vaza da caixa (0.19)"
+ ],
+ "train/good/Fotos 18-11-2020_DJI_0172_suspensao_para_raio_349.jpg": [
+  "preenche a caixa (1.00)"
+ ],
+ "train/good/Fotos 18-11-2020_DJI_0173_suspensao_para_raio_350.jpg": [
+  "fragmentada (0.78 no maior componente)"
+ ],
+ "train/good/Fotos 18-11-2020_DJI_0199_suspensao_para_raio_336.jpg": [
+  "fragmentada (0.74 no maior componente)"
+ ],
+ "train/good/Fotos 18-11-2020_DJI_0200_suspensao_para_raio_337.jpg": [
+  "vaza da caixa (0.18)"
+ ],
+ "train/good/Fotos 18-11-2020_DJI_0227_suspensao_para_raio_329.jpg": [
+  "vaza da caixa (0.11)"
+ ],
+ "train/good/Fotos 18-11-2020_DJI_0230_suspensao_para_raio_332.jpg": [
+  "fragmentada (0.69 no maior componente)"
+ ],
+ "train/good/Fotos 18-11-2020_DJI_0251_suspensao_para_raio_321.jpg": [
+  "preenche a caixa (0.95)",
+  "vaza da caixa (0.11)"
+ ],
+ "train/good/Fotos 19-11-2020_DJI_0059_suspensao_para_raio_422.jpg": [
+  "preenche a caixa (0.98)",
+  "vaza da caixa (0.12)",
+  "fragmentada (0.64 no maior componente)"
+ ],
+ "train/good/Fotos 19-11-2020_DJI_0087_suspensao_para_raio_413.jpg": [
+  "fragmentada (0.55 no maior componente)"
+ ],
+ "train/good/Fotos 19-11-2020_DJI_0115_suspensao_para_raio_405.jpg": [
+  "fragmentada (0.69 no maior componente)"
+ ],
+ "train/good/Fotos 19-11-2020_DJI_0133_suspensao_para_raio_410.jpg": [
+  "preenche a caixa (1.07)"
+ ],
+ "train/good/Fotos 19-11-2020_DJI_0181_suspensao_para_raio_397.jpg": [
+  "fragmentada (0.78 no maior componente)"
+ ],
+ "train/good/Fotos 19-11-2020_DJI_0211_suspensao_para_raio_394.jpg": [
+  "vaza da caixa (0.17)"
+ ],
+ "train/good/Fotos 20-10-2020_DJI_0212_suspensao_para_raio_464.jpg": [
+  "fragmentada (0.79 no maior componente)"
+ ],
+ "train/good/Fotos 20-10-2020_DJI_0214_suspensao_para_raio_466.jpg": [
+  "fragmentada (0.70 no maior componente)"
+ ],
+ "train/good/Fotos 20-10-2020_DJI_0217_suspensao_para_raio_469.jpg": [
+  "fragmentada (0.80 no maior componente)"
+ ],
+ "train/good/Fotos 20-10-2020_DJI_0223_suspensao_para_raio_475.jpg": [
+  "fragmentada (0.76 no maior componente)"
+ ],
+ "train/good/Fotos 20-10-2020_DJI_0326_suspensao_para_raio_459.jpg": [
+  "fragmentada (0.73 no maior componente)"
+ ],
+ "train/good/Fotos 20-11-2020_DJI_0026_suspensao_para_raio_537.jpg": [
+  "fragmentada (0.57 no maior componente)"
+ ],
+ "train/good/Fotos 20-11-2020_DJI_0178_suspensao_para_raio_506.jpg": [
+  "fragmentada (0.75 no maior componente)"
+ ],
+ "train/good/Fotos 20-11-2020_DJI_0179_suspensao_para_raio_507.jpg": [
+  "vaza da caixa (0.10)",
+  "fragmentada (0.74 no maior componente)"
+ ],
+ "train/good/Fotos 20-11-2020_DJI_0245_suspensao_para_raio_493.jpg": [
+  "fragmentada (0.56 no maior componente)"
+ ],
+ "train/good/Fotos 20-11-2020_DJI_0246_suspensao_para_raio_494.jpg": [
+  "fragmentada (0.59 no maior componente)"
+ ],
+ "train/good/Fotos 20-11-2020_DJI_0280_suspensao_para_raio_486.jpg": [
+  "vaza da caixa (0.12)"
+ ],
+ "train/good/Fotos 21-10-2020_DJI_0353_suspensao_para_raio_541.jpg": [
+  "vaza da caixa (0.11)"
+ ],
+ "train/good/Fotos 22-10-2020_DJI_0781_suspensao_para_raio_551.jpg": [
+  "pouca area na caixa (0.08)",
+  "fragmentada (0.55 no maior componente)"
+ ],
+ "train/good/Fotos 23-11-2020_DJI_0020_suspensao_para_raio_612.jpg": [
+  "vaza da caixa (0.21)"
+ ],
+ "train/good/Fotos 23-11-2020_DJI_0098_suspensao_para_raio_606.jpg": [
+  "fragmentada (0.49 no maior componente)"
+ ],
+ "train/good/Fotos 23-11-2020_DJI_0199_suspensao_para_raio_598.jpg": [
+  "fragmentada (0.73 no maior componente)"
+ ],
+ "train/good/Fotos 23-11-2020_DJI_0234_suspensao_para_raio_596.jpg": [
+  "fragmentada (0.71 no maior componente)"
+ ],
+ "train/good/Fotos 24-11-2020_DJI_0147_suspensao_para_raio_627.jpg": [
+  "fragmentada (0.75 no maior componente)"
+ ],
+ "train/good/Fotos 24-11-2020_DJI_0266_suspensao_para_raio_626.jpg": [
+  "fragmentada (0.69 no maior componente)"
+ ],
+ "train/good/Fotos 24-11-2020_DJI_0358_suspensao_para_raio_622.jpg": [
+  "vaza da caixa (0.18)",
+  "fragmentada (0.74 no maior componente)"
+ ],
+ "train/good/Fotos 25-11-2020_DJI_0005_suspensao_para_raio_645.jpg": [
+  "vaza da caixa (0.14)",
+  "fragmentada (0.78 no maior componente)"
+ ],
+ "train/good/Fotos 27-11-2020_DJI_0446_suspensao_para_raio_672.jpg": [
+  "vaza da caixa (0.11)"
+ ]
+}

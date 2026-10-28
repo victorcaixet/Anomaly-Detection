@@ -59,28 +59,70 @@ def predict_object_mask(
     return union_mask.astype(bool)
 
 
-def predict_object_mask_sam(
-    config, image_path: Path, sam_model: Any, image: np.ndarray
-) -> np.ndarray:
-    """Mascara do objeto pelo SAM: caixa manual se houver sam_boxes, senao ponto."""
-    height, width = image.shape[:2]
-    if config.sam_boxes is not None:
-        relative = image_path.relative_to(config.dataset_root).as_posix()
-        if relative not in config.sam_boxes:
-            raise RuntimeError(f"Sem caixa em sam_boxes: {relative}")
-        prompt = {"bboxes": list(config.sam_boxes[relative])}
-    else:
-        point = [config.sam_point[0] * width, config.sam_point[1] * height]
+def sam_mask(sam_model, image, device=None, box=None, points=None, point=None):
+    """Mascara SAM de um objeto. points: [[x, y, 1 (objeto) | 0 (fundo)], ...] refinam a caixa."""
+    prompt = {}
+    if box is not None:
+        prompt["bboxes"] = list(box)
+    if points:
+        prompt["points"] = [[p[:2] for p in points]]
+        prompt["labels"] = [[int(p[2]) for p in points]]
+    if not prompt:
         prompt = {"points": [point], "labels": [1]}
-    result = sam_model.predict(
-        source=image, verbose=False, device=config.yolo_device, **prompt
-    )[0]
+    height, width = image.shape[:2]
+    result = sam_model.predict(source=image, verbose=False, device=device, **prompt)[0]
     if result.masks is None or len(result.masks.data) == 0:
-        raise RuntimeError(f"SAM nao gerou mascara em {image_path}")
+        raise RuntimeError("SAM nao gerou mascara")
     mask = result.masks.data.detach().cpu().numpy()[0] > 0.5
     return cv2.resize(
         mask.astype(np.uint8), (width, height), interpolation=cv2.INTER_NEAREST
     ).astype(bool)
+
+
+def predict_object_mask_sam(
+    config, image_path: Path, sam_model: Any, image: np.ndarray
+) -> np.ndarray:
+    """Mascara do objeto pelo SAM: caixa manual se houver sam_boxes (senao ponto) + sam_points."""
+    height, width = image.shape[:2]
+    relative = image_path.relative_to(config.dataset_root).as_posix()
+    box = None
+    if config.sam_boxes is not None:
+        if relative not in config.sam_boxes:
+            raise RuntimeError(f"Sem caixa em sam_boxes: {relative}")
+        box = config.sam_boxes[relative]
+    point = [config.sam_point[0] * width, config.sam_point[1] * height]
+    try:
+        return sam_mask(
+            sam_model, image, config.yolo_device, box,
+            (config.sam_points or {}).get(relative), point,
+        )
+    except RuntimeError as error:
+        raise RuntimeError(f"{error} em {image_path}") from error
+
+
+def suspect_mask(mask: np.ndarray, box, min_fill=0.1, max_fill=0.95, max_leak=0.1, min_main=0.8):
+    """Motivos pelos quais uma mascara SAM parece falha, dada a caixa do prompt; [] se plausivel.
+
+    ponytail: limiares chutados, ajuste olhando as figuras; nao ha metrica de verdade.
+    """
+    x0, y0, x1, y1 = (int(round(v)) for v in box)
+    area = int(mask.sum())
+    if area == 0:
+        return ["vazia"]
+    reasons = []
+    fill = area / max(1, (x1 - x0) * (y1 - y0))
+    if fill < min_fill:
+        reasons.append(f"pouca area na caixa ({fill:.2f})")
+    if fill > max_fill:
+        reasons.append(f"preenche a caixa ({fill:.2f})")
+    leak = 1 - mask[max(0, y0):max(0, y1), max(0, x0):max(0, x1)].sum() / area
+    if leak > max_leak:
+        reasons.append(f"vaza da caixa ({leak:.2f})")
+    _, _, stats, _ = cv2.connectedComponentsWithStats(mask.astype(np.uint8), connectivity=8)
+    main = stats[1:, cv2.CC_STAT_AREA].max() / area
+    if main < min_main:
+        reasons.append(f"fragmentada ({main:.2f} no maior componente)")
+    return reasons
 
 
 def clean_mask(config, mask: np.ndarray) -> np.ndarray:
@@ -384,7 +426,7 @@ def expected_preprocessing_state(config) -> dict[str, Any]:
     """Configuracao que precisa coincidir para um cache ser reutilizado."""
     sam = (
         {"segmenter": "sam", "sam_model": config.sam_model, "sam_point": list(config.sam_point),
-         "sam_boxes": config.sam_boxes}
+         "sam_boxes": config.sam_boxes, "sam_points": config.sam_points}
         if config.segmenter == "sam"
         else {}
     )

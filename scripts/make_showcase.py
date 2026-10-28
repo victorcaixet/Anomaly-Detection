@@ -9,12 +9,13 @@ import argparse
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from insulator_anomaly.showcase import make_showcase
+from insulator_anomaly.figures import make_showcase
 
 parser = argparse.ArgumentParser()
 parser.add_argument("experiment")
 parser.add_argument("project")
 parser.add_argument("--out", default="docs/img")
+parser.add_argument("--fpr", type=float, default=0.4, help="taxa de falso alarme alvo do limiar")
 args = parser.parse_args()
-for path in make_showcase(args.experiment, args.project, args.out):
+for path in make_showcase(args.experiment, args.project, args.out, args.fpr):
     print(path)

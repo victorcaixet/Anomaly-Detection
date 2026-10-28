@@ -16,6 +16,7 @@ import pandas as pd
 
 from .config import ProjectConfig
 from .data import build_dataset_records
+from .evaluation import val_threshold
 from .preprocessing import letterbox, read_image
 
 
@@ -252,7 +253,7 @@ def compare_source_scores(source_scores, normal_fpr=0.05):
         if paired is not None and identity != paired:
             raise ValueError("Modos não possuem o mesmo teste de origem.")
         paired = identity
-        threshold = float(np.quantile(val.pred_score, 1-normal_fpr, method='higher'))
+        threshold = val_threshold(val.pred_score, normal_fpr)
         test['pred_label'] = (test.pred_score > threshold).astype(int)
         test['threshold'] = threshold
         tn,fp,fn,tp = confusion_matrix(test.y_true,test.pred_label,labels=[0,1]).ravel()

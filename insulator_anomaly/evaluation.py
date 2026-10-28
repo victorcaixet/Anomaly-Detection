@@ -11,6 +11,11 @@ from PIL import Image
 from .data import IMAGE_EXTENSIONS as EXTENSIONS
 
 
+def val_threshold(normal_scores, fpr):
+    """Limiar de alarme (score > limiar): quantil 1-fpr dos scores de validação normais."""
+    return float(np.quantile(normal_scores, 1 - fpr, method="higher"))
+
+
 def resolve_evaluation_checkpoint(config, mode):
     candidates = [
         config.results_root / mode / "last.ckpt",

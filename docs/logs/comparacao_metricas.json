@@ -1,0 +1,74 @@
+{
+ "datasets": null,
+ "yolo_vs_sam": {
+  "Vidro (m\u00e1scara YOLO)": {
+   "thr": 52.21875,
+   "AUROC": 0.8938967562333575,
+   "recall": 0.8518518518518519,
+   "FPR": 0.20098039215686275,
+   "TP": 69,
+   "FN": 12,
+   "FP": 82,
+   "n_anomaly": 81,
+   "n_good": 408,
+   "AUROC_IC": [
+    0.8651961312564218,
+    0.9196120206411245
+   ]
+  },
+  "Haste (m\u00e1scara SAM)": {
+   "thr": 52.625,
+   "AUROC": 0.8363247863247864,
+   "recall": 0.92,
+   "FPR": 0.3418803418803419,
+   "TP": 46,
+   "FN": 4,
+   "FP": 40,
+   "n_anomaly": 50,
+   "n_good": 117,
+   "AUROC_IC": [
+    0.7728669562885403,
+    0.891478293849924
+   ]
+  }
+ },
+ "falsos_negativos": {
+  "glass": {
+   "thr": 52.21875,
+   "AUROC": 0.8938967562333575,
+   "recall": 0.8518518518518519,
+   "FPR": 0.20098039215686275,
+   "TP": 69,
+   "FN": 12,
+   "FP": 82,
+   "n_anomaly": 81,
+   "n_good": 408
+  },
+  "haste": {
+   "thr": 52.625,
+   "AUROC": 0.8363247863247864,
+   "recall": 0.92,
+   "FPR": 0.3418803418803419,
+   "TP": 46,
+   "FN": 4,
+   "FP": 40,
+   "n_anomaly": 50,
+   "n_good": 117
+  }
+ },
+ "varredura_limiar": null,
+ "heatmaps_porque": {
+  "Vidro (YOLO)": {
+   "spearman_pc_vs_heat": 0.9932857241403173,
+   "auroc_pc": 0.8938967562333575,
+   "auroc_heat": 0.8866194625998547,
+   "auroc_contrast": 0.6284495279593318
+  },
+  "Haste (SAM)": {
+   "spearman_pc_vs_heat": 0.9751733601920682,
+   "auroc_pc": 0.8363247863247864,
+   "auroc_heat": 0.8541880341880341,
+   "auroc_contrast": 0.3058119658119658
+  }
+ }
+}
