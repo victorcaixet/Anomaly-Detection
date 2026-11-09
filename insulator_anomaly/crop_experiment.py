@@ -28,12 +28,16 @@ class CropSettings:
     validation_fraction: float = 0.20
     normal_fpr: float = 0.05
     seed: int = 42
+    context_ratio: float = 0.05
+    blur_sigma_ratio: float = 0.035
 
     def __post_init__(self):
         if not (0 <= self.margin and self.segment_aspect > 0 and self.output_size >= 16):
             raise ValueError("Margem >= 0, aspecto > 0 e resolução >= 16 exigidos.")
         if not (0 <= self.overlap < 1 and 0 < self.validation_fraction < 1):
             raise ValueError("Overlap em [0,1) e fração de validação em (0,1).")
+        if self.context_ratio < 0 or self.blur_sigma_ratio <= 0:
+            raise ValueError("Contexto >= 0 e sigma de blur > 0 exigidos.")
         if not 0 < self.normal_fpr < 1:
             raise ValueError("normal_fpr deve estar em (0,1).")
 
@@ -101,12 +105,14 @@ def locate_crop_boxes(source_root, model_path, confidence=0.25, class_ids=None, 
 
 
 def prepare_crop_experiment(source_root, experiment_root, settings=None,
-                            boxes=None, groups=None, duplicate_policy="error"):
+                            boxes=None, groups=None, duplicate_policy="error", mask_index=None):
     """Cria destino novo, manifesto e duas entradas para as mesmas origens.
 
     boxes: {caminho relativo POSIX: [x0,y0,x1,y1]} na resolução original.
     groups: {caminho relativo POSIX: cadeia/voo/sequência}; obrigatório fornecer
     quando existem imagens relacionadas. Na ausência, cada arquivo é um grupo; duplicatas exatas unem grupos.
+    mask_index ativa full/whole/gray/blur/context com máscaras congeladas;
+    cada chave é uma origem relativa e cada valor um arquivo binário original.
     O holdout normal é feito por grupo ANTES de produzir os segmentos.
     duplicate_policy="exclude_train" preserva o teste e exclui do experimento
     grupos de treino ligados ao teste por conteúdo ou groups. Não altera a
@@ -114,6 +120,8 @@ def prepare_crop_experiment(source_root, experiment_root, settings=None,
     """
     if duplicate_policy not in {"error", "exclude_train"}:
         raise ValueError("duplicate_policy deve ser 'error' ou 'exclude_train'.")
+    if mask_index is not None and boxes:
+        raise ValueError("No estudo de fundos, a caixa deve vir da mesma máscara.")
     settings = settings or CropSettings()
     source_root, root = Path(source_root).resolve(), Path(experiment_root).resolve()
     if root.exists():
@@ -128,6 +136,8 @@ def prepare_crop_experiment(source_root, experiment_root, settings=None,
     known = {s['relative'] for s in sources}
     if (set(boxes) | set(groups)) - known:
         raise ValueError("Há caminhos de boxes/groups que não existem no dataset.")
+    if mask_index is not None and set(mask_index) != known:
+        raise ValueError("mask_index deve cobrir exatamente todas as imagens de origem.")
     # Une grupos ligados por conteúdo antes de sortear o holdout, inclusive
     # conexões transitivas entre grupos fornecidos pelo usuário.
     parents = {s['group']: s['group'] for s in sources}
@@ -202,11 +212,18 @@ def prepare_crop_experiment(source_root, experiment_root, settings=None,
         key = hashlib.sha256(relative.encode()).hexdigest()[:20]
         variants = {'whole': [(0, 0, crop.shape[1], crop.shape[0])],
                     'segments': segment_boxes(crop.shape[1], crop.shape[0], settings.segment_aspect, settings.overlap)}
+        study_images, diagnostics = None, {}
+        if mask_index is not None:
+            from .preprocessing_study import render_variants
+            study_images, diagnostics = render_variants(image, mask_index[relative], settings)
+            variants = {mode: [(0, 0, rendered.shape[1], rendered.shape[0])]
+                        for mode, rendered in study_images.items()}
         for mode, windows in variants.items():
             for index, (a,b,c,d) in enumerate(windows):
                 path = root/'glass-preprocessed'/mode/source['split']/category/f'{key}_{index:04d}.png'
                 path.parent.mkdir(parents=True, exist_ok=True)
-                rendered = letterbox(crop[b:d, a:c], settings.output_size, (114,114,114))
+                rendered = (study_images[mode] if study_images is not None else
+                            letterbox(crop[b:d, a:c], settings.output_size, (114,114,114)))
                 if not cv2.imwrite(str(path), rendered):
                     raise OSError(f"Falha ao salvar {path}")
                 rows.append(dict(mode=mode, split=source['split'], source_id=relative,
@@ -214,11 +231,15 @@ def prepare_crop_experiment(source_root, experiment_root, settings=None,
                                  y_true=label, image_path=str(path.resolve()),
                                  box_source='provided' if relative in boxes else 'full_image',
                                  x0=x0+a, y0=y0+b, x1=x0+c, y1=y0+d))
+                if study_images is not None:
+                    rows[-1].update(diagnostics[mode])
         print(f"Recortes: {number}/{len(sources)} — {relative}")
     manifest = pd.DataFrame(rows)
     manifest.to_csv(root/'manifest.csv', index=False)
     (root/'protocol.json').write_text(json.dumps(dict(
         settings=asdict(settings), source_root=str(source_root),
+        study="preprocessing" if mask_index is not None else "crops",
+        modes=list(manifest["mode"].unique()),
         duplicate_policy=duplicate_policy, n_excluded_train=len(excluded),
         aggregation='max score per original image', training='normal only',
         calibration='held-out normal groups only; strict score > threshold',
@@ -283,7 +304,7 @@ def run_crop_experiment(experiment_root, save_heatmaps=True, accelerator="auto",
     root = Path(experiment_root).resolve()
     protocol = json.loads((root/'protocol.json').read_text(encoding='utf-8'))
     settings = CropSettings(**protocol['settings'])
-    manifest = pd.read_csv(root/'manifest.csv')
+    manifest = pd.read_csv(root/'manifest.csv', dtype={'source_id': str, 'group_id': str})
     config = ProjectConfig(root, background_modes=tuple(modes), output_size=settings.output_size,
                            random_seed=settings.seed, accelerator=accelerator)
     fingerprint = hashlib.sha256((root/'manifest.csv').read_bytes() + (root/'protocol.json').read_bytes())

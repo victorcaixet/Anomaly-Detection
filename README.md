@@ -225,3 +225,40 @@ anomalia possível. Para domínios próximo/distante, execute em raízes separad
 critérios definidos antes de olhar os resultados; avaliar generalização para domínio
 novo é outra hipótese.
 
+
+
+## Estudo pareado do pré-processamento
+
+Abra `Preprocessing_Study.ipynb`. A primeira etapa isola o tratamento do fundo
+com PatchCore fixo: `full` (imagem inteira), `whole` (ROI com fundo), `gray`
+(máscara rígida), `blur` (fundo desfocado) e `context` (máscara dilatada).
+`full` versus `whole` altera também escala; compare os fundos com `whole`
+para controlar a caixa e a escala. Alinhamento e janelas ficam para estudos
+separados. Não use os datasets históricos despareados para esta comparação.
+
+1. Configure os dados brutos, o segmentador e destinos novos no notebook.
+2. Crie `groups.json` com **todos** os caminhos relativos ao dataset como
+   chaves e identificadores de peça/cadeia/sessão como valores. Exemplo:
+   `{"train/good/a.jpg": "cadeia_01", "train/good/b.jpg": "cadeia_01"}`.
+   Complete com todas as imagens. Grupos compartilhados com teste são rejeitados;
+   não renomeie grupos para contornar vazamento. Duplicatas exatas também são verificadas.
+3. Ative `RUN_MASKS`: gera uma máscara por origem, CSV de hashes e configuração
+   do segmentador. Imagens sem detecção recebem máscara vazia; erros de execução
+   interrompem o processo. Os pesos do segmentador não podem ter sido ajustados
+   com o teste. O protocolo do SAM deve usar prompts de objeto, não de defeito.
+4. Ative `RUN_PREPARATION` e confira os exemplos e contagens. O holdout é
+   sorteado uma vez por grupo; o mesmo split vale para todas as condições.
+   Falhas de máscara usam a imagem inteira em todas as variantes, sem excluir casos.
+5. Ative `RUN_TRAINING`: treina um PatchCore por condição com a mesma configuração.
+   O split `val` serve exclusivamente para calibração normal. `comparison.csv`
+   contém AP, AUROC, recall, FPR observada, limiar e matriz de confusão.
+6. A última célula grava `paired_effects.csv`: diferenças em relação a `whole`,
+   com IC95 por bootstrap pareado de grupos (métricas ponderadas por imagem).
+
+Fixe hipóteses e condições antes de avaliar o teste final. Reserve um conjunto
+independente para desenvolvimento se for selecionar condições pelos resultados.
+O quantil normal não garante a FPR no teste; reporte a taxa observada. Os ICs são
+condicionados ao modelo e à calibração, não incluem variabilidade do treino e
+não corrigem comparações múltiplas. Seeds de `CropSettings` afetam o split e o treino.
+Os tempos de geração são diagnósticos, não medem latência ponta a ponta. Esta
+primeira etapa não inclui anotações de defeito nem métricas de localização.
