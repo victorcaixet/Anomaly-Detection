@@ -1,0 +1,95 @@
+STEP prep
+Dataset encontrado: 462 train/good, 117 test/good, 50 test/anomaly.
+{
+  "groups": {
+    "train_good": {
+      "found": 462,
+      "processed": 461
+    },
+    "test_good": {
+      "found": 117,
+      "processed": 117
+    },
+    "test_anomaly": {
+      "found": 50,
+      "processed": 50
+    }
+  },
+  "errors": [
+    {
+      "image": "C:\\Users\\Decktop3\\AppData\\Local\\Temp\\claude\\C--Users-Decktop3-Documents-GitHub-okamochi-p3766\\3b0cebd2-c73a-45d6-8229-93dd93e1126d\\scratchpad\\lrs_proj2\\glass-insulator\\train\\good\\Fotos 03-12-2020_DJI_0041_suspensao_para_raio_72.jpg",
+      "group": "train_good",
+      "error": "SAM nao gerou mascara em C:\\Users\\Decktop3\\AppData\\Local\\Temp\\claude\\C--Users-Decktop3-Documents-GitHub-okamochi-p3766\\3b0cebd2-c73a-45d6-8229-93dd93e1126d\\scratchpad\\lrs_proj2\\glass-insulator\\train\\good\\Fotos 03-12-2020_DJI_0041_suspensao_para_raio_72.jpg"
+    }
+  ]
+}
+Manifesto: C:\Users\Decktop3\AppData\Local\Temp\claude\C--Users-Decktop3-Documents-GitHub-okamochi-p3766\3b0cebd2-c73a-45d6-8229-93dd93e1126d\scratchpad\lrs_proj2\patchcore_insulators\preprocessing_manifest.csv
+Diagnosticos: C:\Users\Decktop3\AppData\Local\Temp\claude\C--Users-Decktop3-Documents-GitHub-okamochi-p3766\3b0cebd2-c73a-45d6-8229-93dd93e1126d\scratchpad\lrs_proj2\patchcore_insulators\debug
+ATENCAO: 1 arquivo(s) falharam. Consulte C:\Users\Decktop3\AppData\Local\Temp\claude\C--Users-Decktop3-Documents-GitHub-okamochi-p3766\3b0cebd2-c73a-45d6-8229-93dd93e1126d\scratchpad\lrs_proj2\patchcore_insulators\preprocessing_summary.json.
+{'train_good': {'found': 462, 'processed': 461}, 'test_good': {'found': 117, 'processed': 117}, 'test_anomaly': {'found': 50, 'processed': 50}} 1 [('tos 03-12-2020_DJI_0041_suspensao_para_raio_72.jpg', 'SAM nao gerou mascara em C:\\Users\\Decktop3\\AppData\\Local\\Tem')]
+STEP layer
+W1028 10:12:39.371000 588 .venv\Lib\site-packages\torch\utils\flop_counter.py:29] triton not found; flop counting will not work for triton kernels
+  from anomalib.models.components.dinov2.layers import Attention, DropPath, LayerScale, MemEffAttention
+C:\Users\Decktop3\Documents\GitHub\Anomaly-Detection\.venv\Lib\site-packages\lightning\pytorch\utilities\parsing.py:213: Attribute 'pre_processor' is an instance of `nn.Module` and is already saved during checkpointing. It is recommended to ignore them using `self.save_hyperparameters(ignore=['pre_processor'])`.
+You are using a CUDA device ('NVIDIA GeForce RTX 4060 Laptop GPU') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+C:\Users\Decktop3\Documents\GitHub\Anomaly-Detection\.venv\Lib\site-packages\lightning\pytorch\core\optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+C:\Users\Decktop3\Documents\GitHub\Anomaly-Detection\.venv\Lib\site-packages\lightning\pytorch\utilities\_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+C:\Users\Decktop3\Documents\GitHub\Anomaly-Detection\.venv\Lib\site-packages\lightning\pytorch\trainer\connectors\data_connector.py:434: The 'train_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=23` in the `DataLoader` to improve performance.
+split  y_true
+test   0         117
+       1          50
+train  0         369
+val    0          92
+dtype: int64
+`Trainer.fit` stopped: `max_epochs=1` reached.
+C:\Users\Decktop3\Documents\GitHub\Anomaly-Detection\.venv\Lib\site-packages\lightning\pytorch\utilities\parsing.py:213: Attribute 'pre_processor' is an instance of `nn.Module` and is already saved during checkpointing. It is recommended to ignore them using `self.save_hyperparameters(ignore=['pre_processor'])`.
+C:\Users\Decktop3\Documents\GitHub\Anomaly-Detection\.venv\Lib\site-packages\lightning\pytorch\utilities\_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+C:\Users\Decktop3\Documents\GitHub\Anomaly-Detection\.venv\Lib\site-packages\lightning\pytorch\trainer\connectors\data_connector.py:434: The 'predict_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=23` in the `DataLoader` to improve performance.
+whole: checkpoint salvo: C:\Users\Decktop3\AppData\Local\Temp\claude\C--Users-Decktop3-Documents-GitHub-okamochi-p3766\3b0cebd2-c73a-45d6-8229-93dd93e1126d\scratchpad\lrs_exp2\patchcore_checkpoints\whole\last.ckpt
+COMPARISON
+                          0
+mode                  whole
+AP                 0.609995
+AUROC              0.836325
+threshold          61.96875
+n_validation             92
+target_normal_fpr      0.05
+validation_fpr     0.043478
+TN                      114
+FP                        3
+FN                       43
+TP                        7
+recall                 0.14
+precision               0.7
+FPR                0.025641
+STEP maps
+whole: 20/259 mapas comparados.
+whole: 40/259 mapas comparados.
+whole: 60/259 mapas comparados.
+whole: 80/259 mapas comparados.
+whole: 100/259 mapas comparados.
+whole: 120/259 mapas comparados.
+whole: 140/259 mapas comparados.
+whole: 160/259 mapas comparados.
+whole: 180/259 mapas comparados.
+whole: 200/259 mapas comparados.
+whole: 220/259 mapas comparados.
+whole: 240/259 mapas comparados.
+whole: 259/259 mapas comparados.
+COMP
+     method    unit    n        AP     AUROC   TN  FP  FN  TP  recall       FPR
+0  absolute   group  167  0.640811  0.854188  115   2  45   5     0.1  0.017094
+1  absolute  source  167  0.640811  0.854188  115   2  45   5     0.1  0.017094
+2  contrast   group  167  0.214939  0.305812  112   5  50   0     0.0  0.042735
+3  contrast  source  167  0.214939  0.305812  112   5  50   0     0.0  0.042735
+4     mebin   group  167  0.641020  0.854530  115   2  45   5     0.1  0.017094
+5     mebin  source  167  0.641020  0.854530  115   2  45   5     0.1  0.017094
+['mode', 'source_id', 'group_id', 'split', 'y_true', 'image_path', 'method', 'score', 'area_fraction', 'components', 'pixel_threshold', 'mask_path', 'has_defect_mask']
+STEP value
+lrs_exp absolute AUROC pc=0.844 map=0.851 fus=0.850 d=+0.007 IC=(-0.007, 0.022) PC 12 / 50 FP 6 | map 16 FP 9
+lrs_exp mebin AUROC pc=0.844 map=0.851 fus=0.850 d=+0.007 IC=(-0.007, 0.022) PC 12 / 50 FP 6 | map 16 FP 9
+lrs_exp contrast AUROC pc=0.844 map=0.394 fus=0.674 d=-0.450 IC=(-0.552, -0.344) PC 12 / 50 FP 6 | map 0 FP 2
+lrs_exp2 absolute AUROC pc=0.836 map=0.854 fus=0.848 d=+0.018 IC=(0.001, 0.037) PC 7 / 50 FP 3 | map 8 FP 5
+lrs_exp2 mebin AUROC pc=0.836 map=0.855 fus=0.849 d=+0.018 IC=(0.001, 0.038) PC 7 / 50 FP 3 | map 8 FP 5
+lrs_exp2 contrast AUROC pc=0.836 map=0.306 fus=0.621 d=-0.531 IC=(-0.628, -0.426) PC 7 / 50 FP 3 | map 0 FP 2
+DONE

@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 
-from insulator_anomaly.report import load_results, make_report, select_cases
+from insulator_anomaly.figures import load_results, make_report, select_cases
 
 
 class ReportTests(unittest.TestCase):

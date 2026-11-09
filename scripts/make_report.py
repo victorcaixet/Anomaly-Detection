@@ -12,7 +12,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from insulator_anomaly.config import ProjectConfig
 from insulator_anomaly.evaluation import predict_checked_heatmaps, resolve_evaluation_checkpoint
-from insulator_anomaly.report import load_results, make_report, select_cases
+from insulator_anomaly.figures import load_results, make_report, select_cases
 
 parser = argparse.ArgumentParser()
 parser.add_argument("project")

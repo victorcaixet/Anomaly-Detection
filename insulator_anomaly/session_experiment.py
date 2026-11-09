@@ -1,4 +1,4 @@
-"""Um PatchCore por grupo de sessões de captura; divisão por rajada, treino só normal.
+"""Divisão por rajada e grupos de sessões de captura (um PatchCore por grupo; driver: scripts/run_sessions.py).
 
 Rajada = fotos consecutivas (DJI) da mesma data; nunca cruza treino/val/teste.
 O limiar de cada modelo é um quantil dos scores da validação normal.
@@ -15,7 +15,7 @@ import cv2
 import numpy as np
 import pandas as pd
 
-from .config import ProjectConfig
+from .evaluation import val_threshold
 
 NAME = re.compile(r"Fotos_(\d\d-\d\d-\d{4})_DJI_(\d+)")
 FEATURES = ["r", "g", "b", "sat", "val", "std", "sharp"]
@@ -106,65 +106,6 @@ def prepare_groups(manifest, groups, root, max_train=350):
                 shutil.copy2(row.path, target)
 
 
-def predict_scores(engine, model, folder, top=0.01):
-    """Score por imagem: máximo do mapa e média do top `top` dos pixels."""
-    from anomalib.data import PredictDataset
-    from torch.utils.data import DataLoader
-
-    dataset = PredictDataset(path=folder)
-    loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0, collate_fn=dataset.collate_fn)
-    rows = []
-    for batch in engine.predict(model=model, dataloaders=loader, return_predictions=True):
-        paths = [batch.image_path] if isinstance(batch.image_path, (str, Path)) else batch.image_path
-        maps = batch.anomaly_map.detach().cpu().float().numpy().reshape(len(paths), -1)
-        k = max(1, math.ceil(maps.shape[1] * top))
-        for path, flat in zip(paths, maps, strict=True):
-            if not np.isfinite(flat).all():
-                raise ValueError(f"Mapa inválido: {path}")
-            rows.append(dict(path=str(Path(path).resolve()), max=float(flat.max()),
-                             top=float(np.partition(flat, -k)[-k:].mean())))
-    return pd.DataFrame(rows)
-
-
-def run_session_experiment(manifest, groups, root, accelerator="gpu", top=0.01, seed=42):
-    """Treina um PatchCore por grupo e devolve scores de val/teste por imagem."""
-    import gc
-    import torch
-    from anomalib.engine import Engine
-    from anomalib.models import Patchcore
-    from lightning.pytorch import seed_everything
-    from .training import train_one_patchcore
-
-    root = Path(root)
-    names = sorted(set(groups.values()))
-    config = ProjectConfig(root, background_modes=tuple(names), random_seed=seed, accelerator=accelerator)
-    out = []
-    for name in names:
-        files = sorted(p.name for p in (root / "glass-preprocessed" / name / "train" / "good").iterdir())
-        signature = hashlib.sha256("".join(files).encode()).hexdigest()
-        seed_everything(seed, workers=True)
-        report = train_one_patchcore(config, name, post_processor=False, preprocessing_id=signature)
-        model = Patchcore.load_from_checkpoint(report["checkpoint"], map_location="cpu", weights_only=False)
-        engine = Engine(default_root_dir=root / "inference" / name, logger=False, accelerator=accelerator,
-                        devices=1, enable_progress_bar=False, enable_model_summary=False)
-        try:
-            base = root / "glass-preprocessed" / name
-            for split, label in (("val", "good"), ("test", "good"), ("test", "anomaly")):
-                scores = predict_scores(engine, model, base / split / label, top)
-                scores["split"], scores["model_group"] = split, name
-                out.append(scores)
-        finally:
-            del model, engine
-            gc.collect()
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-    scores = pd.concat(out, ignore_index=True)
-    # as imagens do experimento são links/cópias: o nome do arquivo é a chave única
-    scores["name"] = scores.path.map(lambda p: Path(p).name)
-    info = manifest.assign(name=manifest.path.map(lambda p: Path(p).name))[["name", "date", "y_true"]]
-    return scores.merge(info, on="name", validate="one_to_one")
-
-
 def evaluate(scores, reference_groups, normal_fpr=0.05):
     """Limiar por modelo = quantil (1-fpr) da validação normal; métricas por grupo de referência.
 
@@ -174,7 +115,8 @@ def evaluate(scores, reference_groups, normal_fpr=0.05):
 
     rows = []
     for kind in ("max", "top"):
-        threshold = scores[(scores.split == "val")].groupby("model_group")[kind].quantile(1 - normal_fpr, interpolation="higher")
+        val = scores[scores.split == "val"]
+        threshold = val.groupby("model_group")[kind].agg(lambda v: val_threshold(v, normal_fpr))
         test = scores[scores.split == "test"].copy()
         test["ratio"] = test[kind] / test.model_group.map(threshold)
         test["alarm"] = test.ratio > 1
