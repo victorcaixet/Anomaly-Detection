@@ -15,4 +15,5 @@ Bad Isolators/
 sam2.1_b.pt
 *.pt
 glass-preprocessed*.zip
+glass-insulator
 .analysis_preview/
