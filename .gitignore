@@ -17,3 +17,9 @@ sam2.1_b.pt
 glass-preprocessed*.zip
 glass-insulator
 .analysis_preview/
+glass-preprocessed/
+seg_annotation/masks1/
+seg_annotation/masks2/
+seg_annotation/propagate/
+seg_annotation/run1/
+seg_annotation/sam50/
